@@ -1,14 +1,12 @@
 {
   "compilerOptions": {
-    "allowJs": true,
     "outDir": "./lib",
     "declaration": true,
     "downlevelIteration": true,
     "experimentalDecorators": true,
     "module": "commonjs",
     "moduleResolution": "node",
-    "importHelpers": true,
     "target": "es6"
   },
-  "include": [ "./src" ]
+  "include": [ "src" ]
 }
