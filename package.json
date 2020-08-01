@@ -1,6 +1,6 @@
 {
   "name": "sakura-sdk",
-  "version": "1.0.1-test",
+  "version": "1.0.2",
   "description": "Sakura",
   "main": "./lib/index.js",
   "types": "./lib/index.d.ts",
@@ -23,9 +23,11 @@
   },
   "homepage": "https://github.com/MagicFun1241/sakura-sdk#readme",
   "dependencies": {
+    "events": "^3.2.0",
     "ws": "^7.3.1"
   },
   "devDependencies": {
+    "@types/events": "^3.0.0",
     "@types/ws": "^7.2.6",
     "typescript": "^3.9.7"
   }
