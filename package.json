@@ -1,0 +1,31 @@
+{
+  "name": "sakura-sdk",
+  "version": "1.0.0",
+  "description": "Sakura",
+  "main": "./lib/index.js",
+  "scripts": {
+    "preinstall": "npm run build",
+    "build": "tsc"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/MagicFun1241/sakura-sdk.git"
+  },
+  "keywords": [
+    "vk",
+    "bots"
+  ],
+  "author": "MagicFun1214",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/MagicFun1241/sakura-sdk/issues"
+  },
+  "homepage": "https://github.com/MagicFun1241/sakura-sdk#readme",
+  "dependencies": {
+    "ws": "^7.3.1"
+  },
+  "devDependencies": {
+    "@types/ws": "^7.2.6",
+    "typescript": "^3.9.7"
+  }
+}
