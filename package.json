@@ -1,11 +1,11 @@
 {
   "name": "sakura-sdk",
-  "version": "1.0.2-fix",
+  "version": "1.0.2-fixes",
   "description": "Sakura",
   "main": "./lib/index.js",
   "types": "./lib/index.d.ts",
   "scripts": {
-    "prepare": "npm run build",
+    "postinstall": "npm run build",
     "build": "tsc"
   },
   "repository": {
