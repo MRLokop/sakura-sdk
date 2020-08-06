@@ -1,6 +1,6 @@
 {
   "name": "sakura-sdk",
-  "version": "1.0.5",
+  "version": "1.0.5-fix",
   "description": "Sakura",
   "main": "./lib/index.js",
   "types": "./lib/index.d.ts",

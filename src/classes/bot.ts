@@ -1,9 +1,9 @@
-import * as chalk from "chalk";
-
 import {
     EventEmitter
 } from "events";
 import * as WebSocket from "ws";
+
+import Logger from "./logger";
 
 interface Options {
     key: string;
@@ -43,32 +43,20 @@ class Sakura extends EventEmitter {
     constructor(options: Options) {
         super();
 
-        try {
-            this.options = options;
-            this.connection = new WebSocket(options.host);
-            
-            this.setup();
-        } catch {
-            this.onClose();
-        }
+        this.options = options;
+        this.connect();
     }
 
-    private setup() {
+    private connect() {
+        this.connection = new WebSocket(this.options.host);
         this.connection.on("open", this.onOpen.bind(this));
         this.connection.on("message", this.onMessage.bind(this));
-        this.connection.on("close", this.onClose.bind(this));
+        this.connection.on("error", () => setTimeout(this.onError.bind(this), 5000));
     }
 
-    private onClose() {
-        setTimeout(() => {
-            console.log(chalk`{yellow Connection error. Reconnecting...}`);
-            try {
-                this.connection = new WebSocket(this.options.host);
-                this.setup();
-            } catch {
-                this.onClose();
-            }
-        }, 5000);
+    private onError() {
+        Logger.warning("Connection error. Reconnecting...");
+        this.connect();
     }
 
     private onOpen() {
@@ -119,7 +107,7 @@ class Sakura extends EventEmitter {
                 break;
 
             case "error":
-                console.error(chalk`{red Error: ${msg.payload.message}}`);
+                Logger.error(`Error: ${msg.payload.message}`);
                 break;
 
             default:

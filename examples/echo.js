@@ -1,7 +1,8 @@
-const { Sakura } = require("sakura-sdk");
+const { Sakura } = require("../lib");
 
 const bot = new Sakura({
-    key: "test"
+    key: "test",
+    host: "ws://localhost:3122/"
 });
 
 bot.on("message.new", ({ message, send }) => {
