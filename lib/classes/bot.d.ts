@@ -5,9 +5,10 @@ interface Options {
     host: string;
 }
 interface AnyContext {
+    api: Api;
     payload: any;
 }
-interface MessageContext {
+interface MessageContext extends AnyContext {
     message: {
         id: number;
         text: string;
@@ -18,6 +19,11 @@ interface MessageContext {
     reply: (message: string, options?: {
         useFallback: boolean;
     }) => any;
+}
+interface Api {
+    user: {
+        get: () => any;
+    };
 }
 declare type AnyCallback = (context: AnyContext) => any;
 declare type NewMessageCallback = (context: MessageContext) => any;
@@ -34,5 +40,6 @@ declare class Sakura extends EventEmitter {
     private onOpen;
     private onMessage;
     private send;
+    private includeApi;
 }
 export default Sakura;

@@ -10,6 +10,6 @@ export default class Logger {
     }
 
     static error(message: string) {
-        console.error(chalk`[Sakura] {red ${message}`);
+        console.error(chalk`[Sakura] {red ${message}}`);
     }
 }

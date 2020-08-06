@@ -11,10 +11,11 @@ interface Options {
 }
 
 interface AnyContext {
+    api: Api;
     payload: any;
 }
 
-interface MessageContext {
+interface MessageContext extends AnyContext {
     message: {
         id: number;
         text: string;
@@ -27,6 +28,12 @@ interface MessageContext {
     reply: (message: string, options?: {
         useFallback: boolean;
     }) => any;
+}
+
+interface Api {
+    user: {
+        get: () => any;
+    }
 }
 
 type AnyCallback = (context: AnyContext) => any;
@@ -103,17 +110,26 @@ class Sakura extends EventEmitter {
                             }
                         });
                     },
-                    reply: message => {
+                    reply: (message, options) => {
+                        let payload: {
+                            text: string;
+                            useFallback?: boolean;
+                            replyTo: any;
+                        } = {
+                            text: message,
+                            replyTo: msg.payload.id
+                        };
+
+                        if (options.useFallback === true)
+                            payload.useFallback = true;
+
                         this.send({
                             type: "message.reply",
                             eventId: msg.eventId,
-                            payload: {
-                                text: message,
-                                replyTo: msg.payload.id
-                            }
+                            payload: payload
                         });
                     }
-                });
+                } as MessageContext);
                 break;
 
             case "error":
@@ -130,6 +146,10 @@ class Sakura extends EventEmitter {
 
     private send(data) {
         this.connection.send(JSON.stringify(data));
+    }
+
+    private includeApi() {
+        
     }
 }
 
