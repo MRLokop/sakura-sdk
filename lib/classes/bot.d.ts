@@ -25,7 +25,12 @@ declare interface Sakura {
 }
 declare class Sakura extends EventEmitter {
     private connection;
+    private options;
     constructor(options: Options);
+    private setup;
+    private onClose;
+    private onOpen;
+    private onMessage;
     private send;
 }
 export default Sakura;

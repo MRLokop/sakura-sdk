@@ -38,75 +38,96 @@ declare interface Sakura {
 
 class Sakura extends EventEmitter {
     private connection: WebSocket;
+    private options: Options;
 
     constructor(options: Options) {
         super();
 
-        this.connection = new WebSocket(options.host);
+        try {
+            this.options = options;
+            this.connection = new WebSocket(options.host);
+            
+            this.setup();
+        } catch {
+            this.onClose();
+        }
+    }
 
-        this.connection.on("open", () => {
-            this.send({
-                type: "bot.online",
-                payload: {
-                    key: options.key
-                }
-            });
-        });
+    private setup() {
+        this.connection.on("open", this.onOpen.bind(this));
+        this.connection.on("message", this.onMessage.bind(this));
+        this.connection.on("close", this.onClose.bind(this));
+    }
 
-        this.connection.on("message", data => {
-            if (typeof data !== "string") return;
+    private onClose() {
+        setTimeout(() => {
+            console.log(chalk`{yellow Connection error. Reconnecting...}`);
+            try {
+                this.connection = new WebSocket(this.options.host);
+                this.setup();
+            } catch {
+                this.onClose();
+            }
+        }, 5000);
+    }
 
-            const msg: {
-                type: string;
-                eventId: string;
-                payload: any;
-            } = JSON.parse(data);
-
-            switch (msg.type) {
-                case "message.new":
-                    this.emit("message.new", {
-                        message: msg.payload.text,
-                        mentioned: msg.payload.mentioned,
-                        send: message => {
-                            this.send({
-                                type: "message.send",
-                                eventId: msg.eventId,
-                                payload: {
-                                    text: message
-                                }
-                            });
-                        },
-                        reply: message => {
-                            this.send({
-                                type: "message.reply",
-                                eventId: msg.eventId,
-                                payload: {
-                                    text: message,
-                                    replyTo: msg.payload.id
-                                }
-                            });
-                        }
-                    });
-                    break;
-
-                case "error":
-                    console.error(chalk`{red Error: ${msg.payload.message}}`);
-                    break;
-
-                default:
-                    this.emit(msg.type, {
-                        payload: msg.payload
-                    });
-                    break;
+    private onOpen() {
+        this.send({
+            type: "bot.online",
+            payload: {
+                key: this.options.key
             }
         });
+    }
 
-        this.connection.on("close", () => {
-            setTimeout(() => {
-                console.log(chalk`yellow Connection error. Reconnecting...`);
-                this.connection = new WebSocket(options.host);
-            }, 5000);
-        });
+    private onMessage(data: WebSocket.Data) {
+        if (typeof data !== "string") return;
+
+        const msg: {
+            type: string;
+            eventId: string;
+            payload: any;
+        } = JSON.parse(data);
+
+        switch (msg.type) {
+            case "message.new":
+                this.emit("message.new", {
+                    message: {
+                        text: msg.payload.text
+                    },
+                    mentioned: msg.payload.mentioned,
+                    send: message => {
+                        this.send({
+                            type: "message.send",
+                            eventId: msg.eventId,
+                            payload: {
+                                text: message
+                            }
+                        });
+                    },
+                    reply: message => {
+                        this.send({
+                            type: "message.reply",
+                            eventId: msg.eventId,
+                            payload: {
+                                text: message,
+                                replyTo: msg.payload.id
+                            }
+                        });
+                    }
+                });
+                break;
+
+            case "error":
+                console.error(chalk`{red Error: ${msg.payload.message}}`);
+                break;
+
+            default:
+                this.emit(msg.type, {
+                    payload: msg.payload
+                });
+                break;
+        }
     }
 
     private send(data) {
