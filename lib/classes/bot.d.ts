@@ -2,6 +2,7 @@
 import { EventEmitter } from "events";
 interface Options {
     key: string;
+    host: string;
 }
 interface AnyContext {
     payload: any;
@@ -10,6 +11,7 @@ interface MessageContext {
     message: {
         text: string;
     };
+    mentioned: boolean;
     send: (message: string) => any;
     reply: (message: string) => any;
 }
