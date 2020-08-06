@@ -1,11 +1,10 @@
 {
   "name": "sakura-sdk",
-  "version": "1.0.2-fixes",
+  "version": "1.0.3",
   "description": "Sakura",
   "main": "./lib/index.js",
   "types": "./lib/index.d.ts",
   "scripts": {
-    "postinstall": "npm run build",
     "build": "tsc"
   },
   "repository": {
@@ -16,7 +15,7 @@
     "vk",
     "bots"
   ],
-  "author": "MagicFun1214",
+  "author": "MagicFun1241",
   "license": "MIT",
   "bugs": {
     "url": "https://github.com/MagicFun1241/sakura-sdk/issues"
