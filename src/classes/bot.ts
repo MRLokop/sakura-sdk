@@ -16,10 +16,12 @@ interface AnyContext {
 
 interface MessageContext {
     message: {
+        id: number;
         text: string;
     };
-
     mentioned: boolean;
+
+    isConversation: boolean;
 
     send: (message: string) => any;
     reply: (message: string, options?: {
@@ -87,9 +89,11 @@ class Sakura extends EventEmitter {
             case "message.new":
                 this.emit("message.new", {
                     message: {
+                        id: msg.payload.id,
                         text: msg.payload.text
                     },
                     mentioned: msg.payload.mentioned,
+                    isConversation: msg.payload.isConversation,
                     send: message => {
                         this.send({
                             type: "message.send",

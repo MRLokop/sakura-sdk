@@ -9,9 +9,11 @@ interface AnyContext {
 }
 interface MessageContext {
     message: {
+        id: number;
         text: string;
     };
     mentioned: boolean;
+    isConversation: boolean;
     send: (message: string) => any;
     reply: (message: string, options?: {
         useFallback: boolean;
