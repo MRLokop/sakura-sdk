@@ -13,7 +13,9 @@ interface MessageContext {
     };
     mentioned: boolean;
     send: (message: string) => any;
-    reply: (message: string) => any;
+    reply: (message: string, options?: {
+        useFallback: boolean;
+    }) => any;
 }
 declare type AnyCallback = (context: AnyContext) => any;
 declare type NewMessageCallback = (context: MessageContext) => any;

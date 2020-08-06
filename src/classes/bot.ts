@@ -1,4 +1,8 @@
-import { EventEmitter } from "events";
+import * as chalk from "chalk";
+
+import {
+    EventEmitter
+} from "events";
 import * as WebSocket from "ws";
 
 interface Options {
@@ -18,7 +22,9 @@ interface MessageContext {
     mentioned: boolean;
 
     send: (message: string) => any;
-    reply: (message: string) => any;
+    reply: (message: string, options?: {
+        useFallback: boolean;
+    }) => any;
 }
 
 type AnyCallback = (context: AnyContext) => any;
@@ -76,11 +82,15 @@ class Sakura extends EventEmitter {
                                 eventId: msg.eventId,
                                 payload: {
                                     text: message,
-                                    replyTo: 0
+                                    replyTo: msg.payload.id
                                 }
                             });
                         }
                     });
+                    break;
+
+                case "error":
+                    console.error(chalk`{red Error: ${msg.payload.message}}`);
                     break;
 
                 default:
@@ -89,6 +99,13 @@ class Sakura extends EventEmitter {
                     });
                     break;
             }
+        });
+
+        this.connection.on("close", () => {
+            setTimeout(() => {
+                console.log(chalk`yellow Connection error. Reconnecting...`);
+                this.connection = new WebSocket(options.host);
+            }, 5000);
         });
     }
 
