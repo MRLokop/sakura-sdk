@@ -2,7 +2,7 @@ import * as chalk from "chalk";
 
 export default class Logger {
     static log(data) {
-        console.log(chalk`[Sakura] {${data}}`);
+        console.log(chalk`[Sakura] ${data}`);
     }
     
     static warning(text: string) {

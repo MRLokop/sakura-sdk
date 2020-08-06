@@ -51,21 +51,27 @@ class Sakura extends EventEmitter {
         this.connection = new WebSocket(this.options.host);
         this.connection.on("open", this.onOpen.bind(this));
         this.connection.on("message", this.onMessage.bind(this));
-        this.connection.on("error", () => setTimeout(this.onError.bind(this), 5000));
+        this.connection.on("error", () => {});
+        this.connection.on("close", code => {
+            if (code === 1006) setTimeout(this.onClose.bind(this), 5000)
+            else Logger.log(`Server close connection with code ${code}`);
+        });
     }
 
-    private onError() {
+    private onClose() {
         Logger.warning("Connection error. Reconnecting...");
         this.connect();
     }
 
     private onOpen() {
-        this.send({
-            type: "bot.online",
-            payload: {
-                key: this.options.key
-            }
-        });
+        if (this.connection.readyState === WebSocket.OPEN) {
+            this.send({
+                type: "bot.online",
+                payload: {
+                    key: this.options.key
+                }
+            });
+        } else Logger.error("Connection is not opened");
     }
 
     private onMessage(data: WebSocket.Data) {

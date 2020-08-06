@@ -28,7 +28,7 @@ declare class Sakura extends EventEmitter {
     private options;
     constructor(options: Options);
     private connect;
-    private onError;
+    private onClose;
     private onOpen;
     private onMessage;
     private send;
