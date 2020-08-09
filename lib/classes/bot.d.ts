@@ -1,32 +1,42 @@
 /// <reference types="node" />
 import { EventEmitter } from "events";
-interface Options {
+export interface Options {
     key: string;
     host: string;
 }
-interface AnyContext {
+export interface AnyContext {
     api: Api;
     payload: any;
 }
-interface MessageContext extends AnyContext {
+export interface MessageSendOptions {
+    attachments: Attachment[];
+}
+export interface ReplyMessageOptions extends MessageSendOptions {
+    useFallback: boolean;
+}
+export interface MessageContext extends AnyContext {
     message: {
         id: number;
         text: string;
     };
     mentioned: boolean;
     isConversation: boolean;
-    send: (message: string) => any;
-    reply: (message: string, options?: {
-        useFallback: boolean;
-    }) => any;
+    send: (message: string, options?: MessageSendOptions) => any;
+    reply: (message: string, options?: ReplyMessageOptions) => any;
 }
-interface Api {
+export interface Api {
     user: {
         get: () => any;
     };
+    documents: {
+        search: () => any;
+    };
 }
-declare type AnyCallback = (context: AnyContext) => any;
-declare type NewMessageCallback = (context: MessageContext) => any;
+export declare type AnyCallback = (context: AnyContext) => any;
+export declare type NewMessageCallback = (context: MessageContext) => any;
+export interface Attachment {
+    toJson: () => any;
+}
 declare interface Sakura {
     on(event: "message.new", listener: NewMessageCallback): this;
     on(event: string, listener: AnyCallback): this;

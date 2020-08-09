@@ -5,17 +5,25 @@ import * as WebSocket from "ws";
 
 import Logger from "./logger";
 
-interface Options {
+export interface Options {
     key: string;
     host: string;
 }
 
-interface AnyContext {
+export interface AnyContext {
     api: Api;
     payload: any;
 }
 
-interface MessageContext extends AnyContext {
+export interface MessageSendOptions {
+    attachments: Attachment[];
+}
+
+export interface ReplyMessageOptions extends MessageSendOptions {
+    useFallback: boolean;
+}
+
+export interface MessageContext extends AnyContext {
     message: {
         id: number;
         text: string;
@@ -24,24 +32,28 @@ interface MessageContext extends AnyContext {
 
     isConversation: boolean;
 
-    send: (message: string) => any;
-    reply: (message: string, options?: {
-        useFallback: boolean;
-    }) => any;
+    send: (message: string, options?: MessageSendOptions) => any;
+    reply: (message: string, options?: ReplyMessageOptions) => any;
 }
 
-interface Api {
+export interface Api {
     user: {
         get: () => any;
+    },
+    documents: {
+        search: () => any;
     }
 }
 
-type AnyCallback = (context: AnyContext) => any;
-type NewMessageCallback = (context: MessageContext) => any;
+export type AnyCallback = (context: AnyContext) => any;
+export type NewMessageCallback = (context: MessageContext) => any;
+
+export interface Attachment {
+    toJson: () => any;
+}
 
 declare interface Sakura {
     on(event: "message.new", listener: NewMessageCallback): this;
-
     on(event: string, listener: AnyCallback): this;
 }
 
@@ -101,12 +113,13 @@ class Sakura extends EventEmitter {
                     },
                     mentioned: msg.payload.mentioned,
                     isConversation: msg.payload.isConversation,
-                    send: message => {
+                    send: (message, options) => {
                         this.send({
                             type: "message.send",
                             eventId: msg.eventId,
                             payload: {
-                                text: message
+                                text: message,
+                                attachments: options ? options.attachments.map(attachment => attachment.toJson()) : undefined
                             }
                         });
                     },
@@ -115,9 +128,11 @@ class Sakura extends EventEmitter {
                             text: string;
                             useFallback?: boolean;
                             replyTo: any;
+                            attachments: any;
                         } = {
                             text: message,
-                            replyTo: msg.payload.id
+                            replyTo: msg.payload.id,
+                            attachments: options ? options.attachments.map(attachment => attachment.toJson()) : undefined
                         };
 
                         if (options.useFallback === true)
