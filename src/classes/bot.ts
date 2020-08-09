@@ -1,69 +1,65 @@
-import {
-    EventEmitter
-} from "events";
+import {EventEmitter} from "events";
 import * as WebSocket from "ws";
 
-import Logger from "./logger";
+import {CallablePayload, Payload} from "./types/payload";
+import {Api} from "./types/sakura";
+import {ContextFactory} from "./types/context";
+import {SimpleContextFactory} from "./impl/SimpleContextFactory";
+import {NewMessageCallback} from "./types/callback";
 
 export interface Options {
     key: string;
     host: string;
 }
 
-export interface AnyContext {
-    api: Api;
-    payload: any;
-}
-
-export interface MessageSendOptions {
-    attachments: Attachment[];
-}
-
-export interface ReplyMessageOptions extends MessageSendOptions {
-    useFallback: boolean;
-}
-
-export interface MessageContext extends AnyContext {
-    message: {
-        id: number;
-        text: string;
-    };
-    mentioned: boolean;
-
-    isConversation: boolean;
-
-    send: (message: string, options?: MessageSendOptions) => any;
-    reply: (message: string, options?: ReplyMessageOptions) => any;
-}
-
-export interface Api {
-    user: {
-        get: () => any;
-    },
-    documents: {
-        search: () => any;
-    }
-}
-
-export type AnyCallback = (context: AnyContext) => any;
-export type NewMessageCallback = (context: MessageContext) => any;
-
 export interface Attachment {
     toJson: () => any;
 }
 
+
 declare interface Sakura {
-    on(event: "message.new", listener: NewMessageCallback): this;
-    on(event: string, listener: AnyCallback): this;
+    on(type: "error", cb: (err: any) => void);
+
+    on(type: "open", cb: VoidFunction);
+
+    on(type: "close", cb: (code: number) => void);
+
+    on(type: "socket-error", cb: (error: any) => void);
+
+    on(type: "message.new", cb: NewMessageCallback);
 }
 
 class Sakura extends EventEmitter {
     private connection: WebSocket;
     private options: Options;
+    private api: Api;
+    private eventCallbacks: { [id: string]: (ev: any) => any } = {};
+    private contextFactory: ContextFactory;
 
     constructor(options: Options) {
         super();
 
+        this.contextFactory = new SimpleContextFactory();
+        this.api = {
+            user: {
+                get: (uid) => {
+                    return this.sendAndGet({
+                        type: "users.get",
+                        randomId: (Math.random() * 1000) + "-users.get",
+                        userId: uid
+                    })
+                }
+            },
+            documents: {
+                search: (query, count = 20, offset = 0) => {
+                    return this.sendAndGet({
+                        type: "docs.search",
+                        randomId: (Math.random() * 1000) + "-docs.search",
+                        query, offset, count
+                    })
+                }
+            }
+        }
         this.options = options;
         this.connect();
     }
@@ -72,15 +68,17 @@ class Sakura extends EventEmitter {
         this.connection = new WebSocket(this.options.host);
         this.connection.on("open", this.onOpen.bind(this));
         this.connection.on("message", this.onMessage.bind(this));
-        this.connection.on("error", () => {});
+        this.connection.on("error", (err) => {
+            this.emit("socket-error", err);
+        });
         this.connection.on("close", code => {
             if (code === 1006) setTimeout(this.onClose.bind(this), 5000)
-            else Logger.log(`Server close connection with code ${code}`);
+            else this.emit("close", code);
         });
     }
 
-    private onClose() {
-        Logger.warning("Connection error. Reconnecting...");
+    private onClose(code: number) {
+        this.emit("close", code);
         this.connect();
     }
 
@@ -92,7 +90,8 @@ class Sakura extends EventEmitter {
                     key: this.options.key
                 }
             });
-        } else Logger.error("Connection is not opened");
+            this.emit("open");
+        } else this.emit("error", "connection is not opened");
     }
 
     private onMessage(data: WebSocket.Data) {
@@ -105,50 +104,20 @@ class Sakura extends EventEmitter {
         } = JSON.parse(data);
 
         switch (msg.type) {
+            case "response":
+                if (this.eventCallbacks[msg.eventId]) {
+                    this.eventCallbacks[msg.eventId](msg.payload)
+                    return;
+                }
+
+                break;
             case "message.new":
-                this.emit("message.new", {
-                    message: {
-                        id: msg.payload.id,
-                        text: msg.payload.text
-                    },
-                    mentioned: msg.payload.mentioned,
-                    isConversation: msg.payload.isConversation,
-                    send: (message, options) => {
-                        this.send({
-                            type: "message.send",
-                            eventId: msg.eventId,
-                            payload: {
-                                text: message,
-                                attachments: options ? options.attachments.map(attachment => attachment.toJson()) : undefined
-                            }
-                        });
-                    },
-                    reply: (message, options) => {
-                        let payload: {
-                            text: string;
-                            useFallback?: boolean;
-                            replyTo: any;
-                            attachments: any;
-                        } = {
-                            text: message,
-                            replyTo: msg.payload.id,
-                            attachments: options ? options.attachments.map(attachment => attachment.toJson()) : undefined
-                        };
-
-                        if (options.useFallback === true)
-                            payload.useFallback = true;
-
-                        this.send({
-                            type: "message.reply",
-                            eventId: msg.eventId,
-                            payload: payload
-                        });
-                    }
-                } as MessageContext);
+                this.emit("message.new", this.contextFactory.createMessageContext(this, msg));
                 break;
 
             case "error":
-                Logger.error(`Error: ${msg.payload.message}`);
+                // Logger.error(`Error: ${msg.payload.message}`);
+                this.emit("error", msg);
                 break;
 
             default:
@@ -159,13 +128,21 @@ class Sakura extends EventEmitter {
         }
     }
 
-    private send(data) {
+    public send(data: Payload<any | undefined>) {
         this.connection.send(JSON.stringify(data));
     }
 
+    public sendAndGet<T>(data: CallablePayload<any | undefined>): Promise<T> {
+        this.send(data);
+        return new Promise<T>((resolve, reject) => {
+            this.eventCallbacks[data.eventId] = resolve;
+        });
+    }
+
     private includeApi() {
-        
+
     }
 }
+
 
 export default Sakura;
